@@ -1,0 +1,1 @@
+Folder containing CSS style files for views (html pages).

@@ -1,0 +1,1 @@
+Folder containing HTML view pages for the game.
