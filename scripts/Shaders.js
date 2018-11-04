@@ -10,7 +10,9 @@ class Shaders {
         this.pMatrix = mat4.create();
         this.mvMatrix = mat4.create();
         this.triangleVertexPositionBuffer;
+        this.triangleVertexColorBuffer;
         this.squareVertexPositionBuffer;
+        this.squareVertexColorBuffer;
     }
 
     getShader(id) {
@@ -62,6 +64,9 @@ class Shaders {
         this.shaderProgram.vertexPositionAttribute = this.gl.getAttribLocation(this.shaderProgram, "aVertexPosition");
         this.gl.enableVertexAttribArray(this.shaderProgram.vertexPositionAttribute);
 
+        this.shaderProgram.vertexColorAttribute = this.gl.getAttribLocation(this.shaderProgram, "aVertexColor");
+        this.gl.enableVertexAttribArray(this.shaderProgram.vertexColorAttribute);
+
         this.shaderProgram.pMatrixUniform = this.gl.getUniformLocation(this.shaderProgram, "uPMatrix");
         this.shaderProgram.mvMatrixUniform = this.gl.getUniformLocation(this.shaderProgram, "uMVMatrix");
     }
@@ -84,6 +89,18 @@ class Shaders {
         this.triangleVertexPositionBuffer.itemSize = 3;
         this.triangleVertexPositionBuffer.numElements = 3;
 
+        this.triangleVertexColorBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangleVertexColorBuffer);
+        let colors = [];
+        colors = ColorConsts.addColor("yellow", colors);
+        colors = ColorConsts.addColor("yellow", colors);
+        colors = ColorConsts.addColor("yellow", colors);
+
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
+        this.triangleVertexColorBuffer.itemSize = 4;
+        this.triangleVertexColorBuffer.numElements = 3;
+
+
         this.squareVertexPositionBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.squareVertexPositionBuffer);
         vertices = [
@@ -95,6 +112,20 @@ class Shaders {
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
         this.squareVertexPositionBuffer.itemSize = 3;
         this.squareVertexPositionBuffer.numElements = 4;
+
+
+        this.squareVertexColorBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.squareVertexColorBuffer);
+
+        colors = [];
+        colors = ColorConsts.addColor("blue", colors);
+        colors = ColorConsts.addColor("green", colors);
+        colors = ColorConsts.addColor("red", colors);
+        colors = ColorConsts.addColor("brown", colors);
+
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
+        this.squareVertexColorBuffer.itemSize = 4;
+        this.squareVertexColorBuffer.numElements = 4;
     }
 
     drawScene() {
@@ -107,6 +138,10 @@ class Shaders {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangleVertexPositionBuffer);
         this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.triangleVertexPositionBuffer.itemSize,
             this.gl.FLOAT, false, 0, 0);
+
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangleVertexColorBuffer);
+        this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.triangleVertexColorBuffer.itemSize,
+            this.gl.FLOAT, false, 0, 0);
         this.setMatrixUniforms();
         this.gl.drawArrays(this.gl.TRIANGLES, 0, this.triangleVertexPositionBuffer.numElements);
 
@@ -114,6 +149,9 @@ class Shaders {
         mat4.translate(this.mvMatrix, [3.0, 0.0, 0.0]);
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.squareVertexPositionBuffer);
         this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.squareVertexPositionBuffer.itemSize,
+            this.gl.FLOAT, false, 0, 0);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.squareVertexColorBuffer);
+        this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.squareVertexColorBuffer.itemSize,
             this.gl.FLOAT, false, 0, 0);
         this.setMatrixUniforms();
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.squareVertexPositionBuffer.numElements);

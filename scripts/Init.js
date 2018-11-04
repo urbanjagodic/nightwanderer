@@ -36,7 +36,6 @@ class Init {
         catch (e) {}
         if (!this.gl)
             alert("Unable to initialize WebGL. Your browser may not support it!");
-
         return this.gl;
     }
 }
