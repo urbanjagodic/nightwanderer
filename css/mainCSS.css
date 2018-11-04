@@ -1,1 +1,34 @@
 ﻿/* CSS file for main.html page */
+
+#content {
+    width: 100%;
+    text-align: center;
+}
+
+canvas {
+    display: inline;
+    border: 1px solid black;
+}
+
+h1#title {
+    margin: 5px 0px 10px 0px;
+    text-align: center;
+    font-family: Calibri;
+}
+
+h2 {
+    text-align: left;
+}
+
+td {
+
+    text-align: left;
+}
+
+#loadingText {
+    position: absolute;
+    top: 250px;
+    left: 150px;
+    font-size: 2em;
+    color: white;
+}
