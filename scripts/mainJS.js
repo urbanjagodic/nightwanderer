@@ -259,14 +259,12 @@ function handleLoadedWorld(data) {
     var skyVertexTextureCoords = [];
 
     let addToSky = false;
-
     for (var i in lines) {
         var vals = lines[i].replace(/^\s+/, "").split(/\s+/);
 
         if (vals[0] == "SKY") {
             addToSky = true;
         }
-
         if (vals.length == 5 && vals[0] != "//") {
             // It is a line describing a vertex; get X, Y and Z first
             if (addToSky) {
@@ -291,7 +289,6 @@ function handleLoadedWorld(data) {
             }
         }
     }
-
     worldVertexPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, worldVertexPositionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositions), gl.STATIC_DRAW);
@@ -305,7 +302,6 @@ function handleLoadedWorld(data) {
     worldVertexTextureCoordBuffer.numItems = vertexCount;
 
     // sky
-
     skyVertexPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, skyVertexPositionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(skyVertexPositions), gl.STATIC_DRAW);
@@ -358,7 +354,6 @@ function handleLoadedWorld(data) {
         -1.0, 1.0, 1.0,
         -1.0, 1.0, -1.0
     ];
-
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     treeVertexPositionBuffer.itemSize = 3;
     treeVertexPositionBuffer.numItems = 24;
@@ -409,9 +404,6 @@ function handleLoadedWorld(data) {
     treeVertexIndexBuffer.itemSize = 1;
     treeVertexIndexBuffer.numItems = 36;
     
-
-
-    document.getElementById("loadingtext").textContent = "";
 }
 
 
@@ -542,7 +534,6 @@ function animate() {
     if (lastTime != 0) {
         var elapsed = timeNow - lastTime;
 
-
         // jump functionality
         if (jump) {
             jumpStart = timeNow;
@@ -557,14 +548,11 @@ function animate() {
         }
 
         if (speed != 0) {
-
             if (xPosition < 11.5) {
-
                 xPosition -= Math.sin(degToRad(yaw)) * speed * elapsed;
                 zPosition -= Math.cos(degToRad(yaw)) * speed * elapsed;
             }
         }
-
 
         //console.log("X: " + xPosition + " Y: " + yPosition + " Z: " + zPosition);
 
@@ -629,7 +617,6 @@ function handleKeys() {
     } else {
         speed = 0;
     }
-
     if (currentlyPressedKeys[32]) {
         jump = true;
     }
