@@ -521,6 +521,12 @@ function drawScene() {
     // Restore the original matrix
     mvPopMatrix();
     */
+
+    // set position to x,y,z view elements of the screen
+    document.getElementById("xPosition").innerHTML = xPosition.toFixed(2);
+    document.getElementById("yPosition").innerHTML = yPosition.toFixed(2);
+    document.getElementById("zPosition").innerHTML = zPosition.toFixed(2);
+
     
 }
 
@@ -533,6 +539,10 @@ function animate() {
     var timeNow = new Date().getTime();
     if (lastTime != 0) {
         var elapsed = timeNow - lastTime;
+
+        let heart1 = document.getElementById("life1");
+        let heart2 = document.getElementById("life2");
+        let heart3 = document.getElementById("life3");
 
         // jump functionality
         if (jump) {
@@ -560,6 +570,7 @@ function animate() {
         pitch += pitchRate * elapsed;
         rotationCube += (75 * elapsed) / 1000.0;
 
+
     }
     lastTime = timeNow;
 }
@@ -575,7 +586,7 @@ function handleKeyDown(event) {
 }
 
 function handleKeyUp(event) {
-    console.log("X: " + xPosition.toFixed(2) + " Y: " + yPosition.toFixed(2) + " Z: " + zPosition.toFixed(2));
+    //console.log("X: " + xPosition.toFixed(2) + " Y: " + yPosition.toFixed(2) + " Z: " + zPosition.toFixed(2));
     // reseting the pressed state for individual key
     currentlyPressedKeys[event.keyCode] = false;
 }
@@ -623,6 +634,7 @@ function handleKeys() {
 
 }
 
+
 //
 // start
 //
@@ -630,8 +642,29 @@ function handleKeys() {
 // Figuratively, that is. There's nothing moving in this demo.
 //
 function start() {
-    canvas = document.getElementById("glcanvas");
 
+    let timeInMillis = 0;
+    let playAudio = true;
+    canvas = document.getElementById("glcanvas");
+    let startScreen = document.getElementsByClassName("startScreen")[0];
+    let myAudio = new Audio("../assets/background_music.mp3");
+    let audioIcon = document.getElementById("soundButton");
+
+    audioIcon.onclick = function () {
+        if (playAudio) {
+            audioIcon.src = "../assets/sound_off.png";
+            myAudio.pause();
+            playAudio = false;
+        }
+        else {
+            audioIcon.src = "../assets/sound_on.png";
+            myAudio.play();
+            playAudio = true;
+        }
+    }
+    myAudio.loop = true;
+    myAudio.play();
+    startScreen.style.display = "none";
     gl = initGL(canvas);      // Initialize the GL context
 
     // Only continue if WebGL is available and working
@@ -656,11 +689,55 @@ function start() {
 
         // Set up to draw the scene periodically.
         setInterval(function () {
-            if (texturesLoaded) { // only draw scene and animate when textures are loaded.
+            if (texturesLoaded) {
+                timeInMillis += 10;
+                if (timeInMillis % 1000 == 0) {
+                    let currentTime = 60 - (timeInMillis / 1000);
+                    document.getElementById("currentTime").innerHTML = currentTime + " ";
+                }
+                // color time red if less than 10 seconds
+                if (timeInMillis >= 50000) {
+                    document.getElementsByClassName("timeDiv")[0].style.color = "red";
+                }
+
+                // end of the game after 60 seconds 
+                // TODO needs to be implemented 
+                if (timeInMillis >= 60000) {
+                    myAudio.pause();
+                    console.log("end of the game");
+                    return;
+                }
                 requestAnimationFrame(animate);
                 handleKeys();
                 drawScene();
             }
-        }, 15);
+        }, 10);
     }
+}
+
+function showInstructions() {
+    let optionsInstructions = document.getElementsByClassName("optionsInstructions")[0];
+    let optionsMenu = document.getElementsByClassName("optionsContainer")[0];
+    optionsInstructions.style.display = "block";
+    optionsMenu.style.display = "none";
+}
+
+function backToOptionsOne() {
+    let optionsInstructions = document.getElementsByClassName("optionsInstructions")[0];
+    let optionsMenu = document.getElementsByClassName("optionsContainer")[0];
+    optionsInstructions.style.display = "none";
+    optionsMenu.style.display = "inline-block";
+}
+function showCredits() {
+    let optionsCredits = document.getElementsByClassName("optionsCredits")[0];
+    let optionsMenu = document.getElementsByClassName("optionsContainer")[0];
+    optionsCredits.style.display = "block";
+    optionsMenu.style.display = "none";
+}
+
+function backToOptionsTwo() {
+    let optionsCredits = document.getElementsByClassName("optionsCredits")[0];
+    let optionsMenu = document.getElementsByClassName("optionsContainer")[0];
+    optionsCredits.style.display = "none";
+    optionsMenu.style.display = "inline-block";
 }
