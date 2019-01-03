@@ -125,6 +125,32 @@ td {
     width: 50%;
 }
 
+.optionsControls {
+    margin: 32% auto;
+    width: 100%;
+    font-size: 20px;
+    height: auto;
+    display: none;
+}
+
+.optionsControls #backIcon {
+    width: 40px;
+    height: 40px;
+    position: absolute;
+    transition: all ease-in-out 0.3s;
+}
+
+.optionsControls #backIcon:hover {
+    cursor: pointer;
+    transform: scale(1.2);
+}
+
+.optionsControls p {
+    display: inline-block;
+    margin-left: 30px;
+    width: 50%;
+}
+
 .optionsCredits {
     margin: 32% auto;
     width: 100%;
@@ -192,7 +218,7 @@ width: 50%;
 }
 
 .playingTemplate .positionDiv {
-    font-size: 25px;
+    font-size: 22px;
     position: absolute;
     bottom: 2%;
     left: 1%;
@@ -213,5 +239,74 @@ width: 50%;
 
 .playingTemplate .soundDiv img:hover {
     cursor: pointer;
+}
+
+.playingTemplate img#flashlightImage {
+    position: absolute;
+    bottom: 0;
+    left: 47%;
+    width: 150px;
+    height: 200px;
+}
+
+/* flaslight light circle */
+.flashLightBox {
+    width: 1200px;
+    height: 600px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    margin: auto;
+    text-align: center;
+    z-index: 40;
+    text-align: center;
+    color: white;
+    font-family: Calibri;
+    overflow: hidden;
+    font-size: 30px;
+}
+
+.flashLightBox .box {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 300px;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    width: 420px;
+    height: 420px;
+    box-shadow: 100px 100px 2000px 9999px rgba(0, 0, 0, 0.75);
+}
+
+/* end screen styling */
+
+.endScreen {
+    width: 1200px;
+    height: 600px;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.72);
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    margin: auto;
+    text-align: center;
+    z-index: 130;
+    display: none;
+    text-align: center;
+    color: red;
+    font-family: Calibri;
+    overflow: hidden;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.endScreen .gameOverText {
+    text-align: center;
+    margin: 20% auto;
+    margin-bottom: 2%;
 }
 

@@ -47,13 +47,16 @@
             <div class="optionsContainer">
                 <ul>
                     <li id="startTheGame" onclick="start()">
-                        Start the game
+                        <span onmouseover="hoverSound()">Start the game</span>
                     </li>
                     <li id="instructions" onclick="showInstructions()">
-                        Instructions
+                        <span onmouseover="hoverSound()">Instructions</span>
+                    </li>
+                    <li id="controls" onclick="showControls()">
+                        <span onmouseover="hoverSound()">Controls</span>
                     </li>
                     <li id="credits" onclick="showCredits()">
-                        Credits
+                        <span onmouseover="hoverSound()">Credits</span>
                     </li>
                 </ul>
             </div>
@@ -61,6 +64,17 @@
                 <img id="backIcon" onclick="backToOptionsOne()" src="../assets/back_arrow.png" alt="back icon" />
                 <p>
                     This is the field where the instructions are told ....
+                    fdafasdfasdsdfadsfdfadsfssdf
+                    adsfadsfadsfdsafa
+                    dsfasdfdsfdsafasdfdsafadss
+                    dfasdfadsfads
+                    asdfadsfasd
+                </p>
+            </div>
+            <div class="optionsControls">
+                <img id="backIcon" onclick="backToOptionsFromControls()" src="../assets/back_arrow.png" alt="back icon" />
+                <p>
+                    This is the field where the controls are told ....
                     fdafasdfasdsdfadsfdfadsfssdf
                     adsfadsfadsfdsafa
                     dsfasdfdsfdsafasdfdsafadss
@@ -79,6 +93,7 @@
                 </p>
             </div>
         </div>
+
         <div class="playingTemplate">
             <div class="lives">
                 <img id="life1" src="../assets/life_icon.png" alt="life"/>
@@ -86,7 +101,7 @@
                 <img id="life3" src="../assets/life_icon.png" alt="life"/>
             </div>
             <div class="timeDiv">
-                <span> Time left: </span> <span id="currentTime">60 </span>s
+                <span> Time left: </span> <span id="currentTime">90 </span>s
             </div>
             <div class="positionDiv">
                 Position:
@@ -97,6 +112,19 @@
             <div class="soundDiv">
                 <img id="soundButton" src="../assets/sound_on.png" alt="manage sound"/>
             </div>
+            <img id="flashlightImage" src="../assets/hand.png" alt="flashlight_image" />
+        </div>
+        <div class="flashLightBox">
+            <div class="box">
+            </div>
+        </div>
+        <div class="endScreen">
+            <p class="gameOverText">
+                Game over
+            </p>
+            <p>
+                You have failed miserably :(
+            </p>
         </div>
         <canvas id="glcanvas" width="1200" height="600">
             No canvas suppport in your browser.

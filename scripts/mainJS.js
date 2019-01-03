@@ -20,8 +20,7 @@ let right = true;
 
 let rotationCube = 0;
 
-let neki = false;
-
+let pressedSpaceCounter = 0;
 
 // Model-view and projection matrix and model-view matrix stack
 var mvMatrixStack = [];
@@ -34,6 +33,8 @@ let skyTexture;
 
 // Variable that stores  loading state of textures.
 var texturesLoaded = false;
+
+let flashlightOn = true;
 
 // Keyboard handling helper variable for reading the status of keys
 var currentlyPressedKeys = {};
@@ -527,6 +528,15 @@ function drawScene() {
     document.getElementById("yPosition").innerHTML = yPosition.toFixed(2);
     document.getElementById("zPosition").innerHTML = zPosition.toFixed(2);
 
+    if (flashlightOn) {
+        document.getElementsByClassName("box")[0].style.background = "transparent";
+        document.getElementsByClassName("box")[0].style.borderRadius = "300px";
+    }
+    else {
+        document.getElementsByClassName("box")[0].style.background = "rgba(0, 0, 0, 0.75)";
+        document.getElementsByClassName("box")[0].style.borderRadius = "0px";
+    }
+
     
 }
 
@@ -544,6 +554,7 @@ function animate() {
         let heart2 = document.getElementById("life2");
         let heart3 = document.getElementById("life3");
 
+
         // jump functionality
         if (jump) {
             jumpStart = timeNow;
@@ -551,17 +562,39 @@ function animate() {
         }
         let jumpTime = timeNow - jumpStart;
         if (jumpTime <= 300) {
-            yPosition += 0.05; 
+            yPosition += 0.05;
         }
-        if (300 < jumpTime && yPosition > 0.4) {
+        if (300 < jumpTime && yPosition > 0.45) {
             yPosition -= 0.08; 
         }
+        if (700 < jumpTime && jumpTime < 1000 && yPosition <= 0.45) {
+            pressedSpaceCounter = 0;
+        }
+
+        /* Collision detection for the walls */
+
+        if (xPosition > 11.6) {
+            xPosition -= 0.04;
+        }
+        else if (xPosition < -11.6) {
+            xPosition += 0.04;
+        }
+        if (zPosition > 11.6) {
+            zPosition -= 0.04;
+        }
+        else if (zPosition < -11.6) {
+            zPosition += 0.04;
+        }
+        if (yPosition > 11.5) {
+            yPosition -= 0.05;
+        }
+        /* --------------------------------- */
+
+
 
         if (speed != 0) {
-            if (xPosition < 11.5) {
-                xPosition -= Math.sin(degToRad(yaw)) * speed * elapsed;
-                zPosition -= Math.cos(degToRad(yaw)) * speed * elapsed;
-            }
+            xPosition -= Math.sin(degToRad(yaw)) * speed * elapsed;
+            zPosition -= Math.cos(degToRad(yaw)) * speed * elapsed;
         }
 
         //console.log("X: " + xPosition + " Y: " + yPosition + " Z: " + zPosition);
@@ -582,6 +615,9 @@ function animate() {
 // handleKeyUp      ... called on keyUp event
 //
 function handleKeyDown(event) {
+    if (event.keyCode == 32)
+        pressedSpaceCounter++;
+
     currentlyPressedKeys[event.keyCode] = true;
 }
 
@@ -600,15 +636,14 @@ function handleKeyUp(event) {
 
 function handleKeys() {
     if (currentlyPressedKeys[38]) {
-        // Page Up
+        // Up key
         pitchRate = 0.1;
     } else if (currentlyPressedKeys[40]) {
-        // Page Down
+        // Down key
         pitchRate = -0.1;
     } else {
         pitchRate = 0;
     }
-    
     if (currentlyPressedKeys[65] || currentlyPressedKeys[37]) {
         // Left cursor key or A
         yawRate = 0.1;
@@ -620,28 +655,54 @@ function handleKeys() {
     }
 
     if (currentlyPressedKeys[87]) {
-        // Up cursor key or W
+        //  W
         speed = 0.003;
     } else if (currentlyPressedKeys[83]) {
-        // Down cursor key
+        // S
         speed = -0.003;
     } else {
         speed = 0;
     }
+    // space key for jumping
     if (currentlyPressedKeys[32]) {
-        jump = true;
+        if (pressedSpaceCounter == 1)
+            jump = true;
+    }
+    // F key to turn on/off flashlight
+    if (currentlyPressedKeys[70]) {
+        if (flashlightOn) {
+            setTimeout(function () {
+                flashlightOn = false;
+            }, 200)
+        }
+        else {
+            setTimeout(function () {
+                flashlightOn = true;
+            }, 200)
+        }
     }
 
+    // C key to crouch
+    if (currentlyPressedKeys[67]) {
+        if (yPosition > 0.1)
+            yPosition -= 0.01;
+    }
+    else {
+        if (yPosition < 0.4)
+            yPosition += 0.01;
+    }
 }
 
 
 //
-// start
-//
-// Called when the canvas is created to get the ball rolling.
-// Figuratively, that is. There's nothing moving in this demo.
+// start method of the game,
+// called when user clicks the start button
 //
 function start() {
+
+    /* generate random start position of the player */
+    xPosition = returnRandomPosition();
+    zPosition = returnRandomPosition();
 
     let timeInMillis = 0;
     let playAudio = true;
@@ -652,7 +713,7 @@ function start() {
 
     audioIcon.onclick = function () {
         if (playAudio) {
-            audioIcon.src = "../assets/sound_off.png";
+            audioIcon.src = "../assets/turn_off.png";
             myAudio.pause();
             playAudio = false;
         }
@@ -688,24 +749,25 @@ function start() {
         document.onkeyup = handleKeyUp;
 
         // Set up to draw the scene periodically.
-        setInterval(function () {
+        let gameInterval = setInterval(function () {
             if (texturesLoaded) {
                 timeInMillis += 10;
                 if (timeInMillis % 1000 == 0) {
-                    let currentTime = 60 - (timeInMillis / 1000);
+                    let currentTime = 90 - (timeInMillis / 1000);
                     document.getElementById("currentTime").innerHTML = currentTime + " ";
                 }
                 // color time red if less than 10 seconds
-                if (timeInMillis >= 50000) {
+                if (timeInMillis >= 80000) {
                     document.getElementsByClassName("timeDiv")[0].style.color = "red";
                 }
 
                 // end of the game after 60 seconds 
-                // TODO needs to be implemented 
-                if (timeInMillis >= 60000) {
+                if (timeInMillis >= 90000) {
                     myAudio.pause();
-                    console.log("end of the game");
-                    return;
+                    showEndScreen();
+                    document.getElementsByClassName("timeDiv")[0].style.color = "white";
+                    document.getElementById("currentTime").innerHTML = "90 ";
+                    clearInterval(gameInterval);
                 }
                 requestAnimationFrame(animate);
                 handleKeys();
@@ -740,4 +802,46 @@ function backToOptionsTwo() {
     let optionsMenu = document.getElementsByClassName("optionsContainer")[0];
     optionsCredits.style.display = "none";
     optionsMenu.style.display = "inline-block";
+}
+
+function showControls() {
+    let optionsCredits = document.getElementsByClassName("optionsControls")[0];
+    let optionsMenu = document.getElementsByClassName("optionsContainer")[0];
+    optionsCredits.style.display = "block";
+    optionsMenu.style.display = "none";
+}
+
+function backToOptionsFromControls() {
+    let optionsCredits = document.getElementsByClassName("optionsControls")[0];
+    let optionsMenu = document.getElementsByClassName("optionsContainer")[0];
+    optionsCredits.style.display = "none";
+    optionsMenu.style.display = "inline-block";
+}
+
+function showEndScreen() {
+    let endScreen = document.getElementsByClassName("endScreen")[0];
+    let startScreen = document.getElementsByClassName("startScreen")[0];
+
+    endScreen.style.display = "block";
+    let timer = setTimeout(function () {
+        startScreen.style.display = "block";
+        endScreen.style.display = "none";
+        clearTimeout(timer)
+        }, 4000);
+}
+
+
+function hoverSound() {
+    try {
+        let hoverAudio = new Audio("../assets/sound_effect.mp3");
+        hoverAudio.play();
+    }
+    catch {
+        console.log("Problem with loading audio: ");
+    }
+}
+
+function returnRandomPosition() {
+    let generatedNum = (Math.random() * (11.45));
+    return Math.floor(Math.random() * 2) == 1 ? generatedNum * -1 : generatedNum;
 }
