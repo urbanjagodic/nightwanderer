@@ -6,21 +6,11 @@ var shaderProgram;
 // Buffers
 var worldVertexPositionBuffer = null;
 var worldVertexTextureCoordBuffer = null;
-let treeVertexPositionBuffer = null;
-let treeVertexColorBuffer = null;
-let treeVertexIndexBuffer = null;
-
 let skyVertexPositionBuffer = null;
 let skyVertexTextureCoordBuffer = null;
 
-let backwards = true;
-let forward = true;
-let left = true;
-let right = true;
-
-let rotationCube = 0;
-
-let pressedSpaceCounter = 0;
+let rotationCubeX = 0;
+let rotationCubeY = 0;
 
 // Model-view and projection matrix and model-view matrix stack
 var mvMatrixStack = [];
@@ -35,6 +25,15 @@ let skyTexture;
 var texturesLoaded = false;
 
 let flashlightOn = true;
+let pressedSpaceCounter = 0;
+let lives = 4;
+let collisionTime = 0;
+let hitTree = false;
+
+let trees = [];
+for (let i = 0; i < 60; i++) {
+    trees.push(new Tree());
+}
 
 // Keyboard handling helper variable for reading the status of keys
 var currentlyPressedKeys = {};
@@ -227,18 +226,29 @@ function initTextures() {
         handleTextureLoaded(skyTexture)
     }
     skyTexture.image.src = "../assets/sky2.png";
+
+
+    for (let myTree of trees) {
+        let someTexture;
+        someTexture = gl.createTexture();
+        someTexture.image = new Image();
+        someTexture.image.onload = function () {
+            handleTextureLoaded(someTexture);
+        };  // async loading
+
+
+        someTexture.image.src = "../assets/tree_texture_" + randomTexture() + ".png";
+        myTree.setTexture(someTexture);
+    }
 }
 
 function handleTextureLoaded(texture) {
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
-    // Third texture usus Linear interpolation approximation with nearest Mipmap selection
     gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
     gl.generateMipmap(gl.TEXTURE_2D);
-
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     // when texture loading is finished we can draw scene.
@@ -316,94 +326,123 @@ function handleLoadedWorld(data) {
     skyVertexTextureCoordBuffer.numItems = skyVertexCount;
 
 
-    treeVertexPositionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, treeVertexPositionBuffer);
-    let vertices = [
-        // Front face
-        -1.0, -1.0, 1.0,
-        1.0, -1.0, 1.0,
-        1.0, 1.0, 1.0,
-        -1.0, 1.0, 1.0,
+    // all the trees
 
-        // Back face
-        -1.0, -1.0, -1.0,
-        -1.0, 1.0, -1.0,
-        1.0, 1.0, -1.0,
-        1.0, -1.0, -1.0,
 
-        // Top face
-        -1.0, 1.0, -1.0,
-        -1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0,
-        1.0, 1.0, -1.0,
+    for (let myTree of trees) {
 
-        // Bottom face
-        -1.0, -1.0, -1.0,
-        1.0, -1.0, -1.0,
-        1.0, -1.0, 1.0,
-        -1.0, -1.0, 1.0,
+        let somePositionBuffer;
+        let someVertexCoordBuffer;
+        let someIndexBuffer;
+    
+        somePositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, somePositionBuffer);
+        let vertices = [
+            -1.0, -1.0, 1.0,
+            1.0, -1.0, 1.0,
+            1.0, 1.0, 1.0,
+            -1.0, 1.0, 1.0,
 
-        // Right face
-        1.0, -1.0, -1.0,
-        1.0, 1.0, -1.0,
-        1.0, 1.0, 1.0,
-        1.0, -1.0, 1.0,
+            // Back face
+            -1.0, -1.0, -1.0,
+            -1.0, 1.0, -1.0,
+            1.0, 1.0, -1.0,
+            1.0, -1.0, -1.0,
 
-        // Left face
-        -1.0, -1.0, -1.0,
-        -1.0, -1.0, 1.0,
-        -1.0, 1.0, 1.0,
-        -1.0, 1.0, -1.0
-    ];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-    treeVertexPositionBuffer.itemSize = 3;
-    treeVertexPositionBuffer.numItems = 24;
+            // Top face
+            -1.0, 1.0, -1.0,
+            -1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0,
+            1.0, 1.0, -1.0,
 
-    treeVertexColorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, treeVertexColorBuffer);
-    let colors = [
-        [1.0, 0.5, 0.0, 1.0], // Front face
-        [1.0, 1.0, 0.0, 1.0], // Back face
-        [0.0, 1.0, 0.0, 1.0], // Top face
-        [1.0, 0.5, 0.5, 1.0], // Bottom face
-        [1.0, 0.0, 1.0, 1.0], // Right face
-        [0.0, 0.0, 1.0, 1.0]  // Left face
-    ];
+            // Bottom face
+            -1.0, -1.0, -1.0,
+            1.0, -1.0, -1.0,
+            1.0, -1.0, 1.0,
+            -1.0, -1.0, 1.0,
 
-    var unpackedColors = [];
-    for (var i in colors) {
-        var color = colors[i];
-        // Repeat each color four times for the four vertices of the face
-        for (var j = 0; j < 4; j++) {
-            unpackedColors = unpackedColors.concat(color);
-        }
+            // Right face
+            1.0, -1.0, -1.0,
+            1.0, 1.0, -1.0,
+            1.0, 1.0, 1.0,
+            1.0, -1.0, 1.0,
+
+            // Left face
+            -1.0, -1.0, -1.0,
+            -1.0, -1.0, 1.0,
+            -1.0, 1.0, 1.0,
+            -1.0, 1.0, -1.0
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        somePositionBuffer.itemSize = 3;
+        somePositionBuffer.numItems = 24;
+
+        someVertexCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, someVertexCoordBuffer);
+        let textureCoordinates = [
+            // Front
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0,
+            // Back
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0,
+            // Top
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0,
+            // Bottom
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0,
+            // Right
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0,
+            // Left
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0
+        ];
+
+
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
+        someVertexCoordBuffer.itemSize = 2;
+        someVertexCoordBuffer.numItems = 24;
+
+        // Build the element array buffer; this specifies the indices
+        // into the vertex array for each face's vertices.
+        someIndexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, someIndexBuffer);
+
+        // This array defines each face as two triangles, using the
+        // indices into the vertex array to specify each triangle's
+        // position.
+        var treeVertexIndices = [
+            0, 1, 2, 0, 2, 3,    // Front face
+            4, 5, 6, 4, 6, 7,    // Back face
+            8, 9, 10, 8, 10, 11,  // Top face
+            12, 13, 14, 12, 14, 15, // Bottom face
+            16, 17, 18, 16, 18, 19, // Right face
+            20, 21, 22, 20, 22, 23  // Left face
+        ];
+
+        // Now send the element array to GL
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(treeVertexIndices), gl.STATIC_DRAW);
+        someIndexBuffer.itemSize = 1;
+        someIndexBuffer.numItems = 36;
+
+        myTree.setVertexPositionBuffer(somePositionBuffer);
+        myTree.setVertexTextureCoordBuffer(someVertexCoordBuffer);
+        myTree.setVertexIndexBuffer(someIndexBuffer);
     }
-
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(unpackedColors), gl.STATIC_DRAW);
-    treeVertexColorBuffer.itemSize = 4;
-    treeVertexColorBuffer.numItems = 24;
-
-    // Build the element array buffer; this specifies the indices
-    // into the vertex array for each face's vertices.
-    treeVertexIndexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, treeVertexIndexBuffer);
-
-    // This array defines each face as two triangles, using the
-    // indices into the vertex array to specify each triangle's
-    // position.
-    var treeVertexIndices = [
-        0, 1, 2, 0, 2, 3,    // Front face
-        4, 5, 6, 4, 6, 7,    // Back face
-        8, 9, 10, 8, 10, 11,  // Top face
-        12, 13, 14, 12, 14, 15, // Bottom face
-        16, 17, 18, 16, 18, 19, // Right face
-        20, 21, 22, 20, 22, 23  // Left face
-    ];
-
-    // Now send the element array to GL
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(treeVertexIndices), gl.STATIC_DRAW);
-    treeVertexIndexBuffer.itemSize = 1;
-    treeVertexIndexBuffer.numItems = 36;
     
 }
 
@@ -489,39 +528,43 @@ function drawScene() {
     setMatrixUniforms();
     gl.drawArrays(gl.TRIANGLES, 0, skyVertexPositionBuffer.numItems);
 
-    //mvPopMatrix();
     
 
+    
+    // random generated trees
 
-    /*
-    // CUBE
-    //mvPushMatrix();
-    // Now move the drawing position a bit to where we want to start
-    // drawing the cube.
-    mat4.translate(mvMatrix, [3.0, 3.0, 3.0]);
+    for (let myTree of trees) {
 
-    // Save the current matrix, then rotate before we draw.
-    //mvPushMatrix();
-    mat4.rotate(mvMatrix, degToRad(rotationCube), [1, 1, 1]);
+        mvPushMatrix();
 
-    // Draw the cube by binding the array buffer to the cube's vertices
-    // array, setting attributes, and pushing it to GL.
-    gl.bindBuffer(gl.ARRAY_BUFFER, treeVertexPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, treeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        mat4.translate(mvMatrix, myTree.getPositionMatrix());
+        // Save the current matrix, then rotate before we draw.
+        //mat4.rotate(mvMatrix, degToRad(rotationCubeX), [0, 0, 1]);
+        //mat4.rotate(mvMatrix, degToRad(rotationCubeY), [0, 1, 0]);
 
-    // Set the colors attribute for the vertices.
-    gl.bindBuffer(gl.ARRAY_BUFFER, treeVertexColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, treeVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        // Draw the cube by binding the array buffer to the cube's vertices
+        // array, setting attributes, and pushing it to GL.
+        gl.bindBuffer(gl.ARRAY_BUFFER, myTree.getTreeVertexPositionBuffer());
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, myTree.getTreeVertexPositionBuffer().itemSize, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, treeVertexIndexBuffer);
+        // Set the texture attribute for the vertices.
+        gl.bindBuffer(gl.ARRAY_BUFFER, myTree.getTreeVertexTextureCoordBuffer());
+        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, myTree.getTreeVertexTextureCoordBuffer().itemSize, gl.FLOAT, false, 0, 0);
 
-    // Draw the cube.
-    setMatrixUniforms();
-    gl.drawElements(gl.TRIANGLES, treeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, myTree.getTexture());
+        gl.uniform1i(shaderProgram.samplerUniform, 0);
 
-    // Restore the original matrix
-    mvPopMatrix();
-    */
+        // Draw the cube.
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, myTree.getTreeVertexIndexBuffer());
+        setMatrixUniforms();
+        gl.drawElements(gl.TRIANGLES, myTree.getTreeVertexIndexBuffer().numItems, gl.UNSIGNED_SHORT, 0);
+
+        mvPopMatrix();
+    }
+
+
+    
 
     // set position to x,y,z view elements of the screen
     document.getElementById("xPosition").innerHTML = xPosition.toFixed(2);
@@ -533,11 +576,10 @@ function drawScene() {
         document.getElementsByClassName("box")[0].style.borderRadius = "300px";
     }
     else {
-        document.getElementsByClassName("box")[0].style.background = "rgba(0, 0, 0, 0.75)";
+        document.getElementsByClassName("box")[0].style.background = "rgba(0, 0, 0, 0.92)";
         document.getElementsByClassName("box")[0].style.borderRadius = "0px";
     }
 
-    
 }
 
 //
@@ -590,6 +632,29 @@ function animate() {
         }
         /* --------------------------------- */
 
+        /* collision for trees, player loses a life if 
+         * he hits a tree 
+         * */
+
+        for (let myTree of trees) {
+
+            if (myTree.checkIfCollisionWithUser(xPosition, zPosition)) {
+                console.log("Collision");
+                if (collisionTime == 0) {
+                    let lifeID = "life" + lives;
+                    document.getElementById(lifeID).style.display = "none";
+                    lives--;
+                    collisionTime = timeNow;
+                }
+                else {
+                    if ((timeNow - collisionTime) > 1500) {
+                        collisionTime = 0;
+                    }
+                }
+            }
+        }
+        /* -------------------------------- */
+
 
 
         if (speed != 0) {
@@ -597,11 +662,11 @@ function animate() {
             zPosition -= Math.cos(degToRad(yaw)) * speed * elapsed;
         }
 
-        //console.log("X: " + xPosition + " Y: " + yPosition + " Z: " + zPosition);
-
         yaw += yawRate * elapsed;
         pitch += pitchRate * elapsed;
-        rotationCube += (75 * elapsed) / 1000.0;
+
+        //rotationCubeX += (90 * elapsed) / 1000.0;
+        //rotationCubeY += (90 * elapsed) / 1000.0;
 
 
     }
@@ -681,7 +746,6 @@ function handleKeys() {
             }, 200)
         }
     }
-
     // C key to crouch
     if (currentlyPressedKeys[67]) {
         if (yPosition > 0.1)
@@ -700,16 +764,13 @@ function handleKeys() {
 //
 function start() {
 
-    /* generate random start position of the player */
-    xPosition = returnRandomPosition();
-    zPosition = returnRandomPosition();
-
     let timeInMillis = 0;
     let playAudio = true;
     canvas = document.getElementById("glcanvas");
     let startScreen = document.getElementsByClassName("startScreen")[0];
     let myAudio = new Audio("../assets/background_music.mp3");
     let audioIcon = document.getElementById("soundButton");
+    audioIcon.src = "../assets/sound_on.png";
 
     audioIcon.onclick = function () {
         if (playAudio) {
@@ -742,7 +803,21 @@ function start() {
         initTextures();
         // Initialise world objects
         loadWorld();
-      
+
+
+        /* generate random start position of the player */
+        xPosition = returnRandomPosition();
+        zPosition = returnRandomPosition();
+
+        /* generate positions of the trees, so that they dont collide with
+         * starting position of the player 
+         * */
+        for (let myTree of trees) {
+            while (myTree.checkIfCollisionWithUser(xPosition, zPosition)) {
+                myTree.setPositionMatrix();
+            }
+        }
+
 
         // Bind keyboard handling functions to document handlers
         document.onkeydown = handleKeyDown;
@@ -762,11 +837,15 @@ function start() {
                 }
 
                 // end of the game after 60 seconds 
-                if (timeInMillis >= 90000) {
+                if (timeInMillis >= 90000 || lives < 1) {
                     myAudio.pause();
                     showEndScreen();
                     document.getElementsByClassName("timeDiv")[0].style.color = "white";
                     document.getElementById("currentTime").innerHTML = "90 ";
+                    lives = 4;
+                    for (let i = 1; i <= 4; i++) {
+                        document.getElementById("life" + i).style.display = "inline-block";
+                    }
                     clearInterval(gameInterval);
                 }
                 requestAnimationFrame(animate);
@@ -844,4 +923,8 @@ function hoverSound() {
 function returnRandomPosition() {
     let generatedNum = (Math.random() * (11.45));
     return Math.floor(Math.random() * 2) == 1 ? generatedNum * -1 : generatedNum;
+}
+
+function randomTexture() {
+    return Math.floor(Math.random() * 5) + 1;
 }
