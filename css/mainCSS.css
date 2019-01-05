@@ -210,11 +210,26 @@ width: 50%;
     height: 45px;
 }
 
+.playingTemplate #healthMessage {
+    position: absolute;
+    top: 12%;
+    left: 3%;
+    color: white;
+    font-family: Calibri;
+    font-size: 30px;
+    display: none;
+}
+
 .playingTemplate .timeDiv {
     position: absolute;
     right: 2%;
     top: 3%;
-
+}
+.playingTemplate #timeMessage {
+    position: absolute;
+    top: 12%;
+    right: 2%;
+    display: none;
 }
 
 .playingTemplate .positionDiv {

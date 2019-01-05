@@ -38,9 +38,10 @@ let obstacles = [];
 let rotationObstacleX = 0;
 let rotationObstacleY = 0;
 let hitObstaclesIndexes = [];
-for (let i = 0; i < 25; i++) {
+for (let i = 0; i < 40; i++) {
     obstacles.push(new Obstacle());
 }
+let timeInMillis = 0;
 
 // Keyboard handling helper variable for reading the status of keys
 var currentlyPressedKeys = {};
@@ -55,18 +56,13 @@ var yPosition = 0.4;
 var zPosition = 0;
 var speed = 0;
 let jump = false;
-let jumpStart;
-let jumpEnd;
+let jumpStart = 0;
 
 // Used to make us "jog" up and down as we move forward.
 var joggingAngle = 0;
 
 // Helper variable for animation
 var lastTime = 0;
-
-
-
-
 
 
 
@@ -273,6 +269,8 @@ function initTextures() {
             case 2:
                 myImage = "../assets/give_life_texture.png";
                 break;
+            case 3:
+                myImage = "../assets/take_life_texture.png";
         }
         someTexture.image.src = myImage;
         obstacle.setTexture(someTexture);
@@ -673,10 +671,6 @@ function animate() {
     if (lastTime != 0) {
         var elapsed = timeNow - lastTime;
 
-        let heart1 = document.getElementById("life1");
-        let heart2 = document.getElementById("life2");
-        let heart3 = document.getElementById("life3");
-
 
         // jump functionality
         if (jump) {
@@ -684,14 +678,11 @@ function animate() {
             jump = false;
         }
         let jumpTime = timeNow - jumpStart;
-        if (jumpTime <= 300) {
+        if (jumpTime <= 300 && yPosition < 2.3) {
             yPosition += 0.05;
         }
         if (300 < jumpTime && yPosition > 0.45) {
             yPosition -= 0.08; 
-        }
-        if (700 < jumpTime && jumpTime < 1000 && yPosition <= 0.45) {
-            pressedSpaceCounter = 0;
         }
 
         /* Collision detection for the walls */
@@ -720,15 +711,21 @@ function animate() {
         for (let myTree of trees) {
 
             if (myTree.checkIfCollisionWithUser(xPosition, zPosition)) {
-                console.log("Collision with a tree");
                 if (collisionTime == 0) {
                     let lifeID = "life" + lives;
                     document.getElementById(lifeID).style.display = "none";
+                    document.getElementById("healthMessage").innerHTML = "-1 life";
+                    document.getElementById("healthMessage").style.color = "red";
+                    document.getElementById("healthMessage").style.display = "block";
+                    setTimeout(function () {
+                        document.getElementById("healthMessage").style.display = "none";
+                    }, 2500);
                     lives--;
+                    playObstacleMusic(2);
                     collisionTime = timeNow;
                 }
                 else {
-                    if ((timeNow - collisionTime) > 1500) {
+                    if ((timeNow - collisionTime) > 1200) {
                         collisionTime = 0;
                     }
                 }
@@ -736,17 +733,85 @@ function animate() {
         }
         /* -------------------------------- */
 
+        /* collision detection for obstacles
+         * if he hits:
+         *    blue - increase time by 10s
+         *    red -  decrease time by 10s
+         *    green - add one life
+         */
+
         for (let i = 0; i < obstacles.length; i++) {
             if (!hitObstaclesIndexes.includes(i)) {
 
+                let timeMessage = document.getElementById("timeMessage");
+                let healthMessage = document.getElementById("healthMessage");
+                let addHitIndex = true;
                 let obstacle = obstacles[i];
+
                 if (obstacle.checkIfCollisionWithUser(xPosition, zPosition)) {
-                    console.log("Collision with obstacle");
-                    hitObstaclesIndexes.push(i);
+                    switch (obstacle.getObstacleType()) {
+                        case 0:
+                            timeInMillis -= 11000;
+                            playObstacleMusic(1);
+                            timeMessage.innerHTML = "+10s";
+                            timeMessage.style.color = "green";
+                            timeMessage.style.display = "block";
+                            setTimeout(function () {
+                                timeMessage.style.display = "none";
+                            }, 2500);
+                            break;
+                        case 1:
+                            timeInMillis += 9000;
+                            playObstacleMusic(4);
+                            timeMessage.innerHTML = "-10s";
+                            timeMessage.style.color = "red";
+                            timeMessage.style.display = "block";
+                            setTimeout(function () {
+                                timeMessage.style.display = "none";
+                            }, 2500);
+                            break;
+                        case 2:
+                            if (lives == 4) {
+                                addHitIndex = false;
+                                healthMessage.innerHTML = "Cannot pick item <br/> Maximum lives :)";
+                                healthMessage.style.color = "orange";
+                                healthMessage.style.display = "block";
+                                setTimeout(function () {
+                                    healthMessage.style.display = "none";
+                                }, 2500);
+                            }
+                            else {
+                                lives++;
+                                playObstacleMusic(0);
+                                document.getElementById("life" + lives).style.display = "inline-block";
+                                healthMessage.innerHTML = "+1 life";
+                                healthMessage.style.color = "green";
+                                healthMessage.style.display = "block";
+                                setTimeout(function () {
+                                    healthMessage.style.display = "none";
+                                }, 2500);
+                            }
+                            break;
+                        case 3:
+                            if (lives > 0) {
+                                document.getElementById("life" + lives).style.display = "none";
+                            }
+                            playObstacleMusic(3);
+                            healthMessage.innerHTML = "-1 life";
+                            healthMessage.style.color = "red";
+                            healthMessage.style.display = "block";
+                            setTimeout(function () {
+                                healthMessage.style.display = "none";
+                            }, 2500);
+                            lives--;
+                            break;
+                    }
+                    if (addHitIndex)
+                        hitObstaclesIndexes.push(i);
                 }
             }
         }
-
+        /* ------------------------------------------------------------------------ */
 
 
         if (speed != 0) {
@@ -759,8 +824,6 @@ function animate() {
 
         rotationObstacleX += (90 * elapsed) / 1000.0;
         rotationObstacleY += (90 * elapsed) / 1000.0;
-        //rotationCubeX += (90 * elapsed) / 1000.0;
-        //rotationCubeY += (90 * elapsed) / 1000.0;
 
 
     }
@@ -774,14 +837,10 @@ function animate() {
 // handleKeyUp      ... called on keyUp event
 //
 function handleKeyDown(event) {
-    if (event.keyCode == 32)
-        pressedSpaceCounter++;
-
     currentlyPressedKeys[event.keyCode] = true;
 }
 
 function handleKeyUp(event) {
-    //console.log("X: " + xPosition.toFixed(2) + " Y: " + yPosition.toFixed(2) + " Z: " + zPosition.toFixed(2));
     // reseting the pressed state for individual key
     currentlyPressedKeys[event.keyCode] = false;
 }
@@ -824,8 +883,7 @@ function handleKeys() {
     }
     // space key for jumping
     if (currentlyPressedKeys[32]) {
-        if (pressedSpaceCounter == 1)
-            jump = true;
+        jump = true;
     }
     // F key to turn on/off flashlight
     if (currentlyPressedKeys[70]) {
@@ -858,11 +916,12 @@ function handleKeys() {
 //
 function start() {
 
-    let timeInMillis = 0;
+    timeInMillis = 0;
     let playAudio = true;
     canvas = document.getElementById("glcanvas");
     let startScreen = document.getElementsByClassName("startScreen")[0];
     let myAudio = new Audio("../assets/background_music.mp3");
+    myAudio.volume = 0.2;
     let audioIcon = document.getElementById("soundButton");
     audioIcon.src = "../assets/sound_on.png";
 
@@ -881,21 +940,16 @@ function start() {
     myAudio.loop = true;
     myAudio.play();
     startScreen.style.display = "none";
-    gl = initGL(canvas);      // Initialize the GL context
+    gl = initGL(canvas); 
 
-    // Only continue if WebGL is available and working
     if (gl) {
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);                      // Set clear color to black, fully opaque
-        gl.clearDepth(1.0);                                     // Clear everything
-        gl.enable(gl.DEPTH_TEST);                               // Enable depth testing
-        gl.depthFunc(gl.LEQUAL);                                // Near things obscure far things
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);                      
+        gl.clearDepth(1.0);                                     
+        gl.enable(gl.DEPTH_TEST);                               
+        gl.depthFunc(gl.LEQUAL);                               
 
-        // Initialize the shaders; this is where all the lighting for the
-        // vertices and so forth is established.
         initShaders();
-        // Next, load and set up the textures we'll be using.
         initTextures();
-        // Initialise world objects
         loadWorld();
 
 
@@ -912,7 +966,6 @@ function start() {
             }
         }
 
-        // Bind keyboard handling functions to document handlers
         document.onkeydown = handleKeyDown;
         document.onkeyup = handleKeyUp;
 
@@ -921,20 +974,26 @@ function start() {
             if (texturesLoaded) {
                 timeInMillis += 10;
                 if (timeInMillis % 1000 == 0) {
-                    let currentTime = 90 - (timeInMillis / 1000);
+                    let currentTime = 60 - (timeInMillis / 1000);
                     document.getElementById("currentTime").innerHTML = currentTime + " ";
                 }
                 // color time red if less than 10 seconds
-                if (timeInMillis >= 80000) {
+                if (timeInMillis >= 50000) {
                     document.getElementsByClassName("timeDiv")[0].style.color = "red";
                 }
 
                 // end of the game after 60 seconds 
-                if (timeInMillis >= 90000 || lives < 1) {
+                if (timeInMillis >= 60000 || lives < 1) {
                     myAudio.pause();
                     showEndScreen();
                     document.getElementsByClassName("timeDiv")[0].style.color = "white";
-                    document.getElementById("currentTime").innerHTML = "90 ";
+                    document.getElementById("currentTime").innerHTML = "60 ";
+                    // reinitialize obstacles
+                    /*hitObstaclesIndexes = [];
+                    obstacles = [];
+                    for (let i = 0; i < 40; i++) {
+                        obstacles.push(new Obstacle());
+                    }*/
                     lives = 4;
                     for (let i = 1; i <= 4; i++) {
                         document.getElementById("life" + i).style.display = "inline-block";
@@ -1020,4 +1079,26 @@ function returnRandomPosition() {
 
 function randomTexture() {
     return Math.floor(Math.random() * 5) + 1;
+}
+
+function playObstacleMusic(flag) {
+    let audioSrc;
+    // added life
+    if (flag == 0)
+        audioSrc = "../assets/added_life.wav";
+    // added time
+    else if (flag == 1)
+        audioSrc = "../assets/added_time.wav";
+    // wall hit
+    else if (flag == 2)
+        audioSrc = "../assets/wall_hit.wav";
+    // taken life
+    else if (flag == 3)
+        audioSrc = "../assets/taken_life.wav";
+    // taken time
+    else
+        audioSrc = "../assets/taken_time.wav";
+
+    let audioFile = new Audio(audioSrc);
+    audioFile.play();
 }

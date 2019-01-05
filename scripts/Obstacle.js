@@ -7,7 +7,7 @@ class Obstacle {
         this.obstacleVertexIndexBuffer = null;
         this.obstacleTexture = null;
         this.positionMatrix = this.setPositionMatrix();
-        // 0 - add time, 1 - decrease time, 2 - give life
+        // 0 - add time, 1 - decrease time, 2 - give life, 3 - take life
         this.obstacleType = this.returnRandomObstacleType();
     }
 
@@ -153,7 +153,7 @@ class Obstacle {
     }
 
     returnRandomObstacleType() {
-        return Math.floor(Math.random() * 3);
+        return Math.floor(Math.random() * 4);
     }
 
     checkIfCollisionWithUser(xUser, zUser) {
