@@ -34,6 +34,13 @@ let trees = [];
 for (let i = 0; i < 60; i++) {
     trees.push(new Tree());
 }
+let obstacles = [];
+let rotationObstacleX = 0;
+let rotationObstacleY = 0;
+let hitObstaclesIndexes = [];
+for (let i = 0; i < 25; i++) {
+    obstacles.push(new Obstacle());
+}
 
 // Keyboard handling helper variable for reading the status of keys
 var currentlyPressedKeys = {};
@@ -56,6 +63,12 @@ var joggingAngle = 0;
 
 // Helper variable for animation
 var lastTime = 0;
+
+
+
+
+
+
 
 //
 // Matrix utility functions
@@ -239,6 +252,30 @@ function initTextures() {
 
         someTexture.image.src = "../assets/tree_texture_" + randomTexture() + ".png";
         myTree.setTexture(someTexture);
+    }
+
+    for (let obstacle of obstacles) {
+        let someTexture;
+        someTexture = gl.createTexture();
+        someTexture.image = new Image();
+        someTexture.image.onload = function () {
+            handleTextureLoaded(someTexture);
+        };  // async loading
+
+        let myImage;
+        switch (obstacle.getObstacleType()) {
+            case 0:
+                myImage = "../assets/increase_time_texture.png";
+                break;
+            case 1:
+                myImage = "../assets/decrease_time_texture.png";
+                break;
+            case 2:
+                myImage = "../assets/give_life_texture.png";
+                break;
+        }
+        someTexture.image.src = myImage;
+        obstacle.setTexture(someTexture);
     }
 }
 
@@ -443,6 +480,14 @@ function handleLoadedWorld(data) {
         myTree.setVertexTextureCoordBuffer(someVertexCoordBuffer);
         myTree.setVertexIndexBuffer(someIndexBuffer);
     }
+
+    // obstacles
+
+    for (let obstacle of obstacles) {
+        obstacle.setVertexPositionBuffer(gl);
+        obstacle.setVertexTextureCoordBuffer(gl);
+        obstacle.setVertexIndexBuffer(gl);
+    }
     
 }
 
@@ -563,6 +608,42 @@ function drawScene() {
         mvPopMatrix();
     }
 
+    // random generated obstacles
+
+    for (let i = 0; i < obstacles.length; i++) {
+
+        if (!hitObstaclesIndexes.includes(i)) {
+
+            let obstacle = obstacles[i];
+            mvPushMatrix();
+
+            mat4.translate(mvMatrix, obstacle.getPositionMatrix());
+            // Save the current matrix, then rotate before we draw.
+            mat4.rotate(mvMatrix, degToRad(rotationObstacleX), [1, 0, 0]);
+            mat4.rotate(mvMatrix, degToRad(rotationObstacleY), [0, 1, 0]);
+
+            // Draw the cube by binding the array buffer to the cube's vertices
+            // array, setting attributes, and pushing it to GL.
+            gl.bindBuffer(gl.ARRAY_BUFFER, obstacle.getObstacleVertexPositionBuffer());
+            gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, obstacle.getObstacleVertexPositionBuffer().itemSize, gl.FLOAT, false, 0, 0);
+
+            // Set the texture attribute for the vertices.
+            gl.bindBuffer(gl.ARRAY_BUFFER, obstacle.getObstacleVertexTextureCoordBuffer());
+            gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, obstacle.getObstacleVertexTextureCoordBuffer().itemSize, gl.FLOAT, false, 0, 0);
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, obstacle.getTexture());
+            gl.uniform1i(shaderProgram.samplerUniform, 0);
+
+            // Draw the cube.
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obstacle.getObstacleVertexIndexBuffer());
+            setMatrixUniforms();
+            gl.drawElements(gl.TRIANGLES, obstacle.getObstacleVertexIndexBuffer().numItems, gl.UNSIGNED_SHORT, 0);
+
+            mvPopMatrix();
+        }
+    }
+
 
     
 
@@ -639,7 +720,7 @@ function animate() {
         for (let myTree of trees) {
 
             if (myTree.checkIfCollisionWithUser(xPosition, zPosition)) {
-                console.log("Collision");
+                console.log("Collision with a tree");
                 if (collisionTime == 0) {
                     let lifeID = "life" + lives;
                     document.getElementById(lifeID).style.display = "none";
@@ -655,6 +736,17 @@ function animate() {
         }
         /* -------------------------------- */
 
+        for (let i = 0; i < obstacles.length; i++) {
+            if (!hitObstaclesIndexes.includes(i)) {
+
+                let obstacle = obstacles[i];
+                if (obstacle.checkIfCollisionWithUser(xPosition, zPosition)) {
+                    console.log("Collision with obstacle");
+                    hitObstaclesIndexes.push(i);
+                }
+            }
+        }
+
 
 
         if (speed != 0) {
@@ -665,6 +757,8 @@ function animate() {
         yaw += yawRate * elapsed;
         pitch += pitchRate * elapsed;
 
+        rotationObstacleX += (90 * elapsed) / 1000.0;
+        rotationObstacleY += (90 * elapsed) / 1000.0;
         //rotationCubeX += (90 * elapsed) / 1000.0;
         //rotationCubeY += (90 * elapsed) / 1000.0;
 
@@ -817,7 +911,6 @@ function start() {
                 myTree.setPositionMatrix();
             }
         }
-
 
         // Bind keyboard handling functions to document handlers
         document.onkeydown = handleKeyDown;
