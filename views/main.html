@@ -5,6 +5,7 @@
         <link rel="stylesheet" href="../css/mainCSS.css" type="text/css">
         <script type="text/javascript" src="../scripts/glMatrix-0.9.5.min.js"></script>
         <script src="../scripts/Tree.js" type="text/javascript"></script>
+        <script src="../scripts/Target.js" type="text/javascript"></script>
         <script src="../scripts/Obstacle.js" type="text/javascript"></script>
         <script src="../scripts/mainJS.js" type="text/javascript"></script>
 
@@ -67,23 +68,22 @@
             <div class="optionsInstructions">
                 <img id="backIcon" onclick="backToOptionsOne()" src="../assets/back_arrow.png" alt="back icon" />
                 <p>
-                    This is the field where the instructions are told ....
-                    fdafasdfasdsdfadsfdfadsfssdf
-                    adsfadsfadsfdsafa
-                    dsfasdfdsfdsafasdfdsafadss
-                    dfasdfadsfads
-                    asdfadsfasd
+                    The purpose of the game is to find a hidden blue item somewhere in the forrest.
+                    You only have a flashlight to see in front of you and some given time. 
+                    Inside the forrest you will come across some obstacles which you can pick up.
+                    But be careful, not all of the obstacles are in to your advantage :)
+                    Pay attention to your life and given time :D
+                    Good luck :P
                 </p>
             </div>
             <div class="optionsControls">
                 <img id="backIcon" onclick="backToOptionsFromControls()" src="../assets/back_arrow.png" alt="back icon" />
                 <p>
-                    This is the field where the controls are told ....
-                    fdafasdfasdsdfadsfdfadsfssdf
-                    adsfadsfadsfdsafa
-                    dsfasdfdsfdsafasdfdsafadss
-                    dfasdfadsfads
-                    asdfadsfasd
+                    Move around : W A S D <br />
+                    Look around : arrow keys <br />
+                    Turn on/off flashlight: F key <br />
+                    Jump : space key <br />
+                    Crouch : hold C key 
                 </p>
             </div>
             <div class="optionsCredits">
@@ -134,6 +134,13 @@
             </p>
             <p>
                 You have failed miserably :(
+            </p>
+        </div>
+        <div class="winScreen">
+            <p class="winningText">
+                Congratulations!
+                <br />
+                You have won the game in <span id="winTime"> 100</span> seconds
             </p>
         </div>
         <canvas id="glcanvas" width="1200" height="600">

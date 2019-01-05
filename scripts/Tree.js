@@ -64,4 +64,28 @@ class Tree {
         }
         return false;
     }
+
+    checkIfCollisionWithUserAndTarget(positionObject) {
+        let xTree = this.getPositionMatrix()[0];
+        let zTree = this.getPositionMatrix()[2];
+
+        let xUser = positionObject.userX;
+        let zUser = positionObject.userZ;
+        let xTarget = positionObject.targetX;
+        let zTarget = positionObject.targetZ;
+
+        let leftSide = xTree - 1.05;
+        let rightSide = xTree + 1.05;
+
+        let bottomSide = zTree - 1.05;
+        let topSide = zTree + 1.05;
+
+        if ((xUser > leftSide && xUser < rightSide &&
+            zUser > bottomSide && zUser < topSide) &&
+            (xTarget > leftSide && xTarget < rightSide &&
+                zTarget > bottomSide && zTarget < topSide)) {
+            return true;
+        }
+        return false;
+    }
 }

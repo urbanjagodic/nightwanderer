@@ -293,7 +293,7 @@ width: 50%;
     margin: auto;
     width: 420px;
     height: 420px;
-    box-shadow: 100px 100px 2000px 9999px rgba(0, 0, 0, 0.92);
+    box-shadow: 100px 100px 2000px 9999px rgba(0, 0, 0, 0.95);
 }
 
 /* end screen styling */
@@ -320,6 +320,33 @@ width: 50%;
 }
 
 .endScreen .gameOverText {
+    text-align: center;
+    margin: 20% auto;
+    margin-bottom: 2%;
+}
+
+.winScreen {
+    width: 1200px;
+    height: 600px;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.72);
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    margin: auto;
+    text-align: center;
+    z-index: 130;
+    display: none;
+    text-align: center;
+    color: green;
+    font-family: Calibri;
+    overflow: hidden;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.winScreen .winningText {
     text-align: center;
     margin: 20% auto;
     margin-bottom: 2%;

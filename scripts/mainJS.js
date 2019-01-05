@@ -12,16 +12,13 @@ let skyVertexTextureCoordBuffer = null;
 let rotationCubeX = 0;
 let rotationCubeY = 0;
 
-// Model-view and projection matrix and model-view matrix stack
 var mvMatrixStack = [];
 var mvMatrix = mat4.create();
 var pMatrix = mat4.create();
 
-// Variables for storing textures
 var floorTexture;
 let skyTexture;
 
-// Variable that stores  loading state of textures.
 var texturesLoaded = false;
 
 let flashlightOn = true;
@@ -31,17 +28,22 @@ let collisionTime = 0;
 let hitTree = false;
 
 let trees = [];
-for (let i = 0; i < 60; i++) {
+for (let i = 0; i < 70; i++) {
     trees.push(new Tree());
 }
 let obstacles = [];
 let rotationObstacleX = 0;
 let rotationObstacleY = 0;
 let hitObstaclesIndexes = [];
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 45; i++) {
     obstacles.push(new Obstacle());
 }
 let timeInMillis = 0;
+
+let target = new Target();
+let rotationTargetX = 0;
+let rotationTargetY = 0;
+let rotationTargetZ = 0;
 
 // Keyboard handling helper variable for reading the status of keys
 var currentlyPressedKeys = {};
@@ -63,7 +65,7 @@ var joggingAngle = 0;
 
 // Helper variable for animation
 var lastTime = 0;
-
+let treePositions = [];
 
 
 //
@@ -275,6 +277,16 @@ function initTextures() {
         someTexture.image.src = myImage;
         obstacle.setTexture(someTexture);
     }
+
+    // target texture
+    let someTargetTexture = gl.createTexture();
+    someTargetTexture.image = new Image();
+    someTargetTexture.image.crossOrigin = "anonymous";
+    someTargetTexture.image.onload = function () {
+        handleTextureLoaded(someTargetTexture)
+    }
+    someTargetTexture.image.src = "../assets/target_texture.png";
+    target.setTexture(someTargetTexture);
 }
 
 function handleTextureLoaded(texture) {
@@ -486,6 +498,11 @@ function handleLoadedWorld(data) {
         obstacle.setVertexTextureCoordBuffer(gl);
         obstacle.setVertexIndexBuffer(gl);
     }
+
+    // target 
+    target.setVertexPositionBuffer(gl);
+    target.setVertexTextureCoordBuffer(gl);
+    target.setVertexIndexBuffer(gl);
     
 }
 
@@ -642,8 +659,34 @@ function drawScene() {
         }
     }
 
+    // draw taget
 
-    
+
+    mat4.translate(mvMatrix, target.getPositionMatrix());
+    // Save the current matrix, then rotate before we draw.
+    mat4.rotate(mvMatrix, degToRad(rotationTargetY), [0, 1, 0]);
+    mat4.rotate(mvMatrix, degToRad(rotationTargetZ), [0, 0, 1]);
+
+    // Draw the cube by binding the array buffer to the cube's vertices
+    // array, setting attributes, and pushing it to GL.
+    gl.bindBuffer(gl.ARRAY_BUFFER, target.getTargetVertexPositionBuffer());
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, target.getTargetVertexPositionBuffer().itemSize, gl.FLOAT, false, 0, 0);
+
+    // Set the texture attribute for the vertices.
+    gl.bindBuffer(gl.ARRAY_BUFFER, target.getTargetVertexTextureCoordBuffer());
+    gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, target.getTargetVertexTextureCoordBuffer().itemSize, gl.FLOAT, false, 0, 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, target.getTexture());
+    gl.uniform1i(shaderProgram.samplerUniform, 0);
+
+    // Draw the cube.
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, target.getTargetVertexIndexBuffer());
+    setMatrixUniforms();
+    gl.drawElements(gl.TRIANGLES, target.getTargetVertexIndexBuffer().numItems, gl.UNSIGNED_SHORT, 0);
+
+
+    /* ---------------------------------------------------------------- */
 
     // set position to x,y,z view elements of the screen
     document.getElementById("xPosition").innerHTML = xPosition.toFixed(2);
@@ -655,7 +698,7 @@ function drawScene() {
         document.getElementsByClassName("box")[0].style.borderRadius = "300px";
     }
     else {
-        document.getElementsByClassName("box")[0].style.background = "rgba(0, 0, 0, 0.92)";
+        document.getElementsByClassName("box")[0].style.background = "rgba(0, 0, 0, 0.95)";
         document.getElementsByClassName("box")[0].style.borderRadius = "0px";
     }
 
@@ -811,8 +854,7 @@ function animate() {
                 }
             }
         }
-        /* ------------------------------------------------------------------------ */
-
+        /* ------------------------------------------------------------------ */
 
         if (speed != 0) {
             xPosition -= Math.sin(degToRad(yaw)) * speed * elapsed;
@@ -825,6 +867,8 @@ function animate() {
         rotationObstacleX += (90 * elapsed) / 1000.0;
         rotationObstacleY += (90 * elapsed) / 1000.0;
 
+        rotationTargetZ += (400 * elapsed) / 1000.0;
+        rotationTargetY += (400 * elapsed) / 1000.0;
 
     }
     lastTime = timeNow;
@@ -952,27 +996,44 @@ function start() {
         initTextures();
         loadWorld();
 
-
         /* generate random start position of the player */
         xPosition = returnRandomPosition();
         zPosition = returnRandomPosition();
+        while (target.checkIfCollisionWithUser(xPosition, zPosition)) {
+            target.setPositionMatrix();
+        }
 
-        /* generate positions of the trees, so that they dont collide with
-         * starting position of the player 
+        /* generate positions of the player, so that it doesnt collide with and of the tree
+         * starting position of the player and position of the target object
          * */
         for (let myTree of trees) {
-            while (myTree.checkIfCollisionWithUser(xPosition, zPosition)) {
-                myTree.setPositionMatrix();
+            while (collisionWithATree({
+                treeX: myTree.getPositionMatrix()[0],
+                treeZ: myTree.getPositionMatrix()[2]
+            })) {
+                xPosition = returnRandomPosition();
+                zPosition = returnRandomPosition();
+            }
+        }
+        for (let myTree of trees) {
+            while (target.checkIfCollisionWithATree({
+                treeX: myTree.getPositionMatrix()[0],
+                treeZ: myTree.getPositionMatrix()[2]
+            })) {
+                target.setPositionMatrix();
             }
         }
 
         document.onkeydown = handleKeyDown;
         document.onkeyup = handleKeyUp;
 
+        let beginTime = 0;
+
         // Set up to draw the scene periodically.
         let gameInterval = setInterval(function () {
             if (texturesLoaded) {
                 timeInMillis += 10;
+                beginTime += 10;
                 if (timeInMillis % 1000 == 0) {
                     let currentTime = 60 - (timeInMillis / 1000);
                     document.getElementById("currentTime").innerHTML = currentTime + " ";
@@ -980,6 +1041,26 @@ function start() {
                 // color time red if less than 10 seconds
                 if (timeInMillis >= 50000) {
                     document.getElementsByClassName("timeDiv")[0].style.color = "red";
+                }
+
+                // collision with target causes to win the game
+                if (target.checkIfCollisionWithUser(xPosition, zPosition)) {
+                    myAudio.pause();
+                    document.getElementById("winTime").innerHTML = Math.floor((beginTime / 1000));
+                    showWinningScreen();
+                    document.getElementsByClassName("timeDiv")[0].style.color = "white";
+                    document.getElementById("currentTime").innerHTML = "60 ";
+                    // reinitialize obstacles
+                    /*hitObstaclesIndexes = [];
+                    obstacles = [];
+                    for (let i = 0; i < 45; i++) {
+                        obstacles.push(new Obstacle());
+                    }*/
+                    lives = 4;
+                    for (let i = 1; i <= 4; i++) {
+                        document.getElementById("life" + i).style.display = "inline-block";
+                    }
+                    clearInterval(gameInterval);
                 }
 
                 // end of the game after 60 seconds 
@@ -991,7 +1072,7 @@ function start() {
                     // reinitialize obstacles
                     /*hitObstaclesIndexes = [];
                     obstacles = [];
-                    for (let i = 0; i < 40; i++) {
+                    for (let i = 0; i < 45; i++) {
                         obstacles.push(new Obstacle());
                     }*/
                     lives = 4;
@@ -1061,6 +1142,18 @@ function showEndScreen() {
         }, 4000);
 }
 
+function showWinningScreen() {
+    let winScreen = document.getElementsByClassName("winScreen")[0];
+    let startScreen = document.getElementsByClassName("startScreen")[0];
+
+    winScreen.style.display = "block";
+    let timer = setTimeout(function () {
+        startScreen.style.display = "block";
+        winScreen.style.display = "none";
+        clearTimeout(timer)
+    }, 4000);
+}
+
 
 function hoverSound() {
     try {
@@ -1101,4 +1194,24 @@ function playObstacleMusic(flag) {
 
     let audioFile = new Audio(audioSrc);
     audioFile.play();
+}
+
+function collisionWithATree(treePosition) {
+    treePositions.push(treePosition);
+    for (let myTreePosition of treePositions) {
+        let xTree = myTreePosition.treeX;
+        let zTree = myTreePosition.treeZ;
+
+        let leftSide = xTree - 1.05;
+        let rightSide = xTree + 1.05;
+
+        let bottomSide = zTree - 1.05;
+        let topSide = zTree + 1.05;
+
+        if ((xPosition > leftSide && xPosition < rightSide &&
+            zPosition > bottomSide && zPosition < topSide)) {
+            return true;
+        }
+    }
+    return false;
 }
